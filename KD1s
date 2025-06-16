@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kd1s - Boost TikTok Followers</title>
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    .box {
+      background-color: #1a1a1a;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 400px;
+      margin: auto;
+    }
+    input {
+      width: 80%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      background-color: #fe2c55;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #ff4567;
+    }
+    h1 {
+      color: #fe2c55;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Kd1s</h1>
+    <p>🚀 Boost your TikTok followers now!</p>
+    <input type="text" id="username" placeholder="@yourusername" />
+    <br>
+    <button onclick="boost()">Start Boost</button>
+    <p id="result"></p>
+  </div>
+
+  <script>
+    function boost() {
+      const username = document.getElementById("username").value;
+      if(username.trim() === "") {
+        document.getElementById("result").innerText = "❗ Please enter your TikTok username.";
+      } else {
+        document.getElementById("result").innerText = `✅ Boosting followers for ${username}... Please wait.`;
+      }
+    }
+  </script>
+</body>
+</html>
