@@ -8,7 +8,7 @@
         body {
             margin: 0;
             padding: 0;
-            background: #1a1a2e;
+            background: #0f172a;
             font-family: Tahoma, sans-serif;
             overflow: hidden;
             display: flex;
@@ -23,53 +23,60 @@
 
         #score {
             position: absolute;
-            top: 20px;
-            font-size: 36px;
+            top: 25px;
+            font-size: 42px;
             font-weight: bold;
-            color: #ffcc00;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: #fbbf24;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
             z-index: 10;
         }
 
         canvas {
-            background: #162447;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-            border-radius: 10px;
+            background: #1e293b;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+            border-radius: 12px;
             touch-action: none;
         }
 
         #game-over {
             display: none;
             position: absolute;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 30px;
-            border-radius: 15px;
+            background: rgba(15, 23, 42, 0.95);
+            padding: 35px;
+            border-radius: 20px;
             text-align: center;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            border: 2px solid #334155;
             z-index: 20;
         }
 
         #game-over h2 {
             margin-top: 0;
-            color: #ff4757;
-            font-size: 28px;
+            color: #f87171;
+            font-size: 30px;
+        }
+
+        #game-over p {
+            font-size: 20px;
+            color: #e2e8f0;
         }
 
         #game-over button {
-            background: #2ed573;
+            background: #22c55e;
             border: none;
-            padding: 12px 25px;
+            padding: 14px 28px;
             color: white;
             font-size: 18px;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             margin-top: 15px;
             transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
         }
 
         #game-over button:hover {
-            background: #26af5f;
+            background: #16a34a;
         }
     </style>
 </head>
@@ -93,9 +100,11 @@
         let cameraY = 0;
         let targetCameraY = 0;
 
-        const woodColor1 = "#c87d55";
-        const woodColor2 = "#a0522d";
-        const woodDarkBorder = "#6d3b1e";
+        // ڕەنگەکانی تایبەت بە داری سندوقی ناو وێنەکە (دارێکی کاڵی جوانی گەرم)
+        const woodBg = "#d4a373";
+        const woodInner = "#e9edc9";
+        const woodEdge = "#bc6c25";
+        const plankLine = "#dda15e";
 
         class Block {
             constructor(x, y, width, height, speed) {
@@ -108,121 +117,34 @@
             }
 
             draw() {
-                ctx.fillStyle = woodColor2;
-                ctx.fillRect(this.x, this.y - cameraY, this.width, this.height);
+                let renderY = this.y - cameraY;
 
-                ctx.fillStyle = woodColor1;
-                ctx.fillRect(this.x + 4, this.y - cameraY + 4, this.width - 8, this.height - 8);
+                // چوارچێوەی دەرەوەی دارەکە
+                ctx.fillStyle = woodBg;
+                ctx.fillRect(this.x, renderY, this.width, this.height);
 
-                ctx.strokeStyle = woodDarkBorder;
-                ctx.lineWidth = 2;
-                ctx.strokeRect(this.x, this.y - cameraY, this.width, this.height);
+                // ناوەوەی دارەکە
+                ctx.fillStyle = woodInner;
+                ctx.fillRect(this.x + 4, renderY + 4, this.width - 8, this.height - 8);
+
+                // هێڵە ستوونییەکانی دار (هاوشێوەی وێنەی سندوقەکە)
+                ctx.fillStyle = plankLine;
+                for (let px = this.x + 16; px < this.x + this.width - 12; px += 20) {
+                    ctx.fillRect(px, renderY + 5, 2, this.height - 10);
+                }
+
+                // قەراغی قایم و سەرنجڕاکێش
+                ctx.strokeStyle = woodEdge;
+                ctx.lineWidth = 2.5;
+                ctx.strokeRect(this.x, renderY, this.width, this.height);
+
+                // چوارچێوەی سەرەوە و خوارەوەی دارەکە (بەندی قەراغ)
+                ctx.fillStyle = woodEdge;
+                ctx.fillRect(this.x, renderY, this.width, 4);
+                ctx.fillRect(this.x, renderY + this.height - 4, this.width, 4);
             }
 
             update() {
                 if (!this.landed && gameRunning) {
                     this.x += this.speed;
-                    if (this.x <= 0 || this.x + this.width >= canvas.width) {
-                        this.speed = -this.speed;
-                    }
-                }
-            }
-        }
-
-        let blocks = [];
-        let currentBlock = null;
-
-        function startGame() {
-            blocks = [];
-            score = 0;
-            cameraY = 0;
-            targetCameraY = 0;
-            gameRunning = true;
-            document.getElementById("score").innerText = score;
-            document.getElementById("game-over").style.display = "none";
-
-            // بنکەی سەرەکی با قەبارەکەی هەمیشە جێگیر بێت (پانی 220 و بەرزی 30)
-            let baseBlock = new Block(canvas.width / 2 - 110, canvas.height - 60, 220, 30, 0);
-            baseBlock.landed = true;
-            blocks.push(baseBlock);
-
-            addNewBlock();
-        }
-
-        function addNewBlock() {
-            if (!gameRunning) return;
-            let lastBlock = blocks[blocks.length - 1];
-            let newY = lastBlock.y - 32;
-            let speed = 3.5 + Math.min(score * 0.2, 7); 
-            if (Math.random() > 0.5) speed = -speed;
-            
-            // قەبارەی بۆکسە نوێیەکە هەمیشە وەک خۆی دەمێنێت (220) و بچوוק نابێتەوە
-            currentBlock = new Block(0, newY, 220, 30, speed);
-        }
-
-        function handleTouch(e) {
-            e.preventDefault();
-            if (!gameRunning) return;
-
-            if (currentBlock && !currentBlock.landed) {
-                currentBlock.landed = true;
-                
-                let lastBlock = blocks[blocks.length - 1];
-                
-                // لێرەدا پشکنین دەکەین ئایا بەشێکی زۆری لەسەر بۆکسەکەی خوار خۆیەتی یان نا
-                let overlapStart = Math.max(currentBlock.x, lastBlock.x);
-                let overlapEnd = Math.min(currentBlock.x + currentBlock.width, lastBlock.x + lastBlock.width);
-                let overlapWidth = overlapEnd - overlapStart;
-
-                // مەرجی دۆڕان: ئەگەر ڕێژەی لەسەر یەکبوون کەمتر بێت لە نیوەی بۆکسەکە، یان بە تەواوی لایدا
-                if (overlapWidth < currentBlock.width * 0.4) {
-                    gameRunning = false;
-                    document.getElementById("final-score").innerText = "نمرەکەت: " + score;
-                    document.getElementById("game-over").style.display = "block";
-                } else {
-                    // قەبارەی بۆکسەکە وەک خۆی (220) دەهێڵینەوە و تەنها لە شوێنی خۆی جێگیری دەکەین
-                    currentBlock.width = 220; 
-                    
-                    blocks.push(currentBlock);
-                    score++;
-                    document.getElementById("score").innerText = score;
-
-                    if (blocks.length > 7) {
-                        targetCameraY += 32;
-                    }
-
-                    addNewBlock();
-                }
-            }
-        }
-
-        window.addEventListener("pointerdown", handleTouch, { passive: false });
-
-        document.getElementById("restart-btn").addEventListener("click", (e) => {
-            e.stopPropagation();
-            startGame();
-        });
-
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            cameraY += (targetCameraY - cameraY) * 0.1;
-
-            for (let block of blocks) {
-                block.draw();
-            }
-
-            if (currentBlock) {
-                currentBlock.update();
-                currentBlock.draw();
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        startGame();
-        gameLoop();
-    </script>
-
-</body>
-</html>
+                    if (this.
