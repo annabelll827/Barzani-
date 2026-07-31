@@ -147,4 +147,120 @@
             update() {
                 if (!this.landed && gameRunning) {
                     this.x += this.speed;
-                    if (this.
+                    if (this.x <= 0 || this.x + this.width >= canvas.width) {
+                        this.speed = -this.speed;
+                    }
+                }
+            }
+        }
+
+        let blocks = [];
+        let currentBlock = null;
+        
+        // قیاسی دارەکان (درێژ و ناسک هاوشێوەی ڤیدیۆ و وێنەکە)
+        const blockWidth = 260; 
+        const blockHeight = 35; 
+
+        function startGame() {
+            blocks = [];
+            score = 0;
+            cameraY = 0;
+            targetCameraY = 0;
+            gameRunning = true;
+            document.getElementById("score").innerText = score;
+            document.getElementById("game-over").style.display = "none";
+
+            // بنکەی سەرەکی
+            let baseBlock = new Block(canvas.width / 2 - blockWidth / 2, canvas.height - 70, blockWidth, blockHeight, 0);
+            baseBlock.landed = true;
+            blocks.push(baseBlock);
+
+            addNewBlock();
+        }
+
+        function addNewBlock() {
+            if (!gameRunning) return;
+            let lastBlock = blocks[blocks.length - 1];
+            let newY = lastBlock.y - (blockHeight - 3);
+            
+            // خێرایی کەمێک زیاد دەکات بە پێی بەرزبوونەوەی نمرە
+            let speed = 4 + Math.min(score * 0.12, 5.5); 
+            if (Math.random() > 0.5) speed = -speed;
+            
+            currentBlock = new Block(0, newY, blockWidth, blockHeight, speed);
+        }
+
+        function handleTouch(e) {
+            if (e) e.preventDefault();
+            if (!gameRunning) return;
+
+            if (currentBlock && !currentBlock.landed) {
+                currentBlock.landed = true;
+                
+                let lastBlock = blocks[blocks.length - 1];
+                
+                let overlapStart = Math.max(currentBlock.x, lastBlock.x);
+                let overlapEnd = Math.min(currentBlock.x + currentBlock.width, lastBlock.x + lastBlock.width);
+                let overlapWidth = overlapEnd - overlapStart;
+
+                // ئەگەر زۆر لایدا و کەوتە دەرەوە یاریەکە دەدۆڕێنێت
+                if (overlapWidth < currentBlock.width * 0.35) {
+                    gameRunning = false;
+                    document.getElementById("final-score").innerText = "نمرەکەت: " + score;
+                    document.getElementById("game-over").style.display = "block";
+                } else {
+                    currentBlock.width = blockWidth;
+                    
+                    // پشکنینی ڕێکی بۆ خاڵبەندی
+                    let diff = Math.abs(currentBlock.x - lastBlock.x);
+                    
+                    if (diff < 12) {
+                        score += 10; // زۆر ڕێک و پێک (١٠ خاڵ)
+                    } else {
+                        score += 5;  // دانانی ئاسایی (٥ خاڵ)
+                    }
+
+                    document.getElementById("score").innerText = score;
+
+                    blocks.push(currentBlock);
+
+                    // بەرزکردنەوەی کامێرا کاتێک تاوەرەکە بەرز دەبێتەوە
+                    if (blocks.length > 6) {
+                        targetCameraY += (blockHeight - 3);
+                    }
+
+                    addNewBlock();
+                }
+            }
+        }
+
+        window.addEventListener("pointerdown", handleTouch, { passive: false });
+
+        document.getElementById("restart-btn").addEventListener("click", (e) => {
+            e.stopPropagation();
+            startGame();
+        });
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            cameraY += (targetCameraY - cameraY) * 0.1;
+
+            for (let block of blocks) {
+                block.draw();
+            }
+
+            if (currentBlock) {
+                currentBlock.update();
+                currentBlock.draw();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        startGame();
+        gameLoop();
+    </script>
+
+</body>
+</html>
