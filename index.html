@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>یاری تاوەری دار</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            font-family: Tahoma, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: white;
+            user-select: none;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            font-size: 36px;
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            background: #162447;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        #game-over {
+            display: none;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+
+        #game-over h2 {
+            margin-top: 0;
+            color: #ff4757;
+            font-size: 28px;
+        }
+
+        #game-over button {
+            background: #2ed573;
+            border: none;
+            padding: 12px 25px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.2s;
+        }
+
+        #game-over button:hover {
+            background: #26af5f;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="score">0</div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+    <div id="game-over">
+        <h2>یاریەکە تەواو بوو!</h2>
+        <p id="final-score">نمرەکەت: 0</p>
+        <button onclick="restartGame()">دوبارە یاری کردن</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let score = 0;
+        let gameRunning = true;
+        let cameraY = 0;
+        let targetCameraY = 0;
+
+        // تایبەتمەندی بۆکسەکان (دار)
+        const woodGradientColor1 = "#c87d55";
+        const woodGradientColor2 = "#a0522d";
+        const woodDarkBorder = "#6d3b1e";
+
+        class Block {
+            constructor(x, y, width, height, speed) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.speed = speed;
+                this.landed = false;
+            }
+
+            draw() {
+                // شێوازی داری بۆ بۆکسەکان
+                ctx.fillStyle = woodGradientColor2;
+                ctx.fillRect(this.x, this.y - cameraY, this.width, this.height);
+
+                // هێڵی ناوەوەی دارەکە بۆ جوانی
+                ctx.fillStyle = woodGradientColor1;
+                ctx.fillRect(this.x + 5, this.y - cameraY + 5, this.width - 10, this.height - 10);
+
+                // چوارچێوەی تۆختر بۆ قەراغەکان
+                ctx.strokeStyle = woodDarkBorder;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, this.y - cameraY, this.width, this.height);
+                
+                // هێڵی ڕستەی دار (حەڵقەی دار)
+                ctx.fillStyle = "rgba(0,0,0,0.1)";
+                ctx.fillRect(this.x + 15, this.y - cameraY + 8, 20, this.height - 16);
+                ctx.fillRect(this.x + 60, this.y - cameraY + 8, 15, this.height - 16);
+            }
+
+            update() {
+                if (!this.landed) {
+                    this.x += this.speed;
+                    // گۆڕینی ئاراستەی جووڵە لە لێواری شاشە
+                    if (this.x <= 0 || this.x + this.width >= canvas.width) {
+                        this.speed = -this.speed;
+                    }
+                }
+            }
+        }
+
+        let blocks = [];
+        let currentBlock;
+
+        function startGame() {
+            blocks = [];
+            score = 0;
+            cameraY = 0;
+            targetCameraY = 0;
+            document.getElementById("score").innerText = score;
+            document.getElementById("game-over").style.display = "none";
+
+            // دانانی بنکەی سەرەکی
+            let baseBlock = new Block(canvas.width / 2 - 75, canvas.height - 60, 150, 40, 0);
+            baseBlock.landed = true;
+            blocks.push(baseBlock);
+
+            addNewBlock();
+        }
+
+        function addNewBlock() {
+            let lastBlock = blocks[blocks.length - 1];
+            let newY = lastBlock.y - 45;
+            let speed = 3 + Math.floor(score / 5); // خێرایی زیاد دەکات بە پێی بەرزبوونەوە
+            if (Math.random() > 0.5) speed = -speed;
+            
+            currentBlock = new Block(0, newY, lastBlock.width, 40, speed);
+        }
+
+        // کلیک کردن یان دابگرتن بۆ فڕێدانی بۆکسەکە
+        window.addEventListener("mousedown", () => {
+            if (!gameRunning) return;
+            if (currentBlock && !currentBlock.landed) {
+                currentBlock.landed = true;
+                
+                let lastBlock = blocks[blocks.length - 1];
+                
+                // پشکنینی پێکدادان لەگەڵ بۆکسەکەی خوار خۆی
+                let overlapStart = Math.max(currentBlock.x, lastBlock.x);
+                let overlapEnd = Math.min(currentBlock.x + currentBlock.width, lastBlock.x + lastBlock.width);
+                let overlapWidth = overlapEnd - overlapStart;
+
+                if (overlapWidth <= 0) {
+                    // ئەگەر هیچ بەشێک نەبڕی، یاریەکە دەدۆڕێنێت
+                    gameRunning = false;
+                    document.getElementById("final-score").innerText = "نمرەکەت: " + score;
+                    document.getElementById("game-over").style.display = "block";
+                } else {
+                    // بڕینی بەشی زیادە و رێکخستنی قەبارەی نوێ
+                    currentBlock.x = overlapStart;
+                    currentBlock.width = overlapWidth;
+                    
+                    blocks.push(currentBlock);
+                    score++;
+                    document.getElementById("score").innerText = score;
+
+                    // جووڵاندنی کامێرا بۆ سەرەوە کاتێک تاوەرەکە بەرز دەبێتەوە
+                    if (blocks.length > 6) {
+                        targetCameraY += 45;
+                    }
+
+                    addNewBlock();
+                }
+            }
+        });
+
+        function restartGame() {
+            gameRunning = true;
+            startGame();
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // نەرم جووڵاندنی کامێرا (Smooth Camera)
+            cameraY += (targetCameraY - cameraY) * 0.1;
+
+            // نیشاندانی هەموو بۆکسەکان
+            for (let block of blocks) {
+                block.draw();
+            }
+
+            if (currentBlock && gameRunning) {
+                currentBlock.update();
+                currentBlock.draw();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        startGame();
+        gameLoop();
+    </script>
+
+</body>
+</html>
