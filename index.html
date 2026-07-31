@@ -2,7 +2,7 @@
 <html lang="ckb" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>یاری تاوەری دار</title>
     <style>
         body {
@@ -18,6 +18,7 @@
             height: 100vh;
             color: white;
             user-select: none;
+            -webkit-user-select: none;
         }
 
         #score {
@@ -34,7 +35,7 @@
             background: #162447;
             box-shadow: 0 10px 30px rgba(0,0,0,0.7);
             border-radius: 10px;
-            cursor: pointer;
+            touch-action: none;
         }
 
         #game-over {
@@ -80,7 +81,7 @@
     <div id="game-over">
         <h2>یاریەکە تەواو بوو!</h2>
         <p id="final-score">نمرەکەت: 0</p>
-        <button onclick="restartGame()">دوبارە یاری کردن</button>
+        <button id="restart-btn">دوبارە یاری کردن</button>
     </div>
 
     <script>
@@ -92,7 +93,6 @@
         let cameraY = 0;
         let targetCameraY = 0;
 
-        // ڕەنگی بۆکسەکان (دار)
         const woodColor1 = "#c87d55";
         const woodColor2 = "#a0522d";
         const woodDarkBorder = "#6d3b1e";
@@ -120,7 +120,7 @@
             }
 
             update() {
-                if (!this.landed) {
+                if (!this.landed && gameRunning) {
                     this.x += this.speed;
                     if (this.x <= 0 || this.x + this.width >= canvas.width) {
                         this.speed = -this.speed;
@@ -130,19 +130,18 @@
         }
 
         let blocks = [];
-        let currentBlock;
+        let currentBlock = null;
 
         function startGame() {
             blocks = [];
             score = 0;
             cameraY = 0;
             targetCameraY = 0;
+            gameRunning = true;
             document.getElementById("score").innerText = score;
             document.getElementById("game-over").style.display = "none";
 
-            gameRunning = true;
-
-            // بنکەی سەرەکی (درێژتر و پانایی کەمتر: پانی 220 و بەرزی 30)
+            // بنکەی سەرەکی با قەبارەکەی هەمیشە جێگیر بێت (پانی 220 و بەرزی 30)
             let baseBlock = new Block(canvas.width / 2 - 110, canvas.height - 60, 220, 30, 0);
             baseBlock.landed = true;
             blocks.push(baseBlock);
@@ -151,20 +150,18 @@
         }
 
         function addNewBlock() {
+            if (!gameRunning) return;
             let lastBlock = blocks[blocks.length - 1];
-            let newY = lastBlock.y - 32; // مەودای نێوان نهۆمەکان گونجێنراوە لەگەڵ بەرزی بۆکسەکە
-            let speed = 3.5 + Math.floor(score / 4); 
+            let newY = lastBlock.y - 32;
+            let speed = 3.5 + Math.min(score * 0.2, 7); 
             if (Math.random() > 0.5) speed = -speed;
             
-            // قیاسی نوێ: پانی 220 و بەرزی 30
+            // قەبارەی بۆکسە نوێیەکە هەمیشە وەک خۆی دەمێنێت (220) و بچوוק نابێتەوە
             currentBlock = new Block(0, newY, 220, 30, speed);
         }
 
-        // کۆنترۆڵکردنی کلیک کردن یان لەمسکردن (Touch/Click)
-        window.addEventListener("pointerdown", (e) => {
-            // ڕێگری لە کارکردنی دومەڵی ڕیکستارت کاتێک لەسەر بۆتنەکە کلیک دەکرێت
-            if (e.target.tagName === 'BUTTON') return;
-            
+        function handleTouch(e) {
+            e.preventDefault();
             if (!gameRunning) return;
 
             if (currentBlock && !currentBlock.landed) {
@@ -172,17 +169,19 @@
                 
                 let lastBlock = blocks[blocks.length - 1];
                 
+                // لێرەدا پشکنین دەکەین ئایا بەشێکی زۆری لەسەر بۆکسەکەی خوار خۆیەتی یان نا
                 let overlapStart = Math.max(currentBlock.x, lastBlock.x);
                 let overlapEnd = Math.min(currentBlock.x + currentBlock.width, lastBlock.x + lastBlock.width);
                 let overlapWidth = overlapEnd - overlapStart;
 
-                if (overlapWidth <= 0) {
+                // مەرجی دۆڕان: ئەگەر ڕێژەی لەسەر یەکبوون کەمتر بێت لە نیوەی بۆکسەکە، یان بە تەواوی لایدا
+                if (overlapWidth < currentBlock.width * 0.4) {
                     gameRunning = false;
                     document.getElementById("final-score").innerText = "نمرەکەت: " + score;
                     document.getElementById("game-over").style.display = "block";
                 } else {
-                    currentBlock.x = overlapStart;
-                    currentBlock.width = overlapWidth;
+                    // قەبارەی بۆکسەکە وەک خۆی (220) دەهێڵینەوە و تەنها لە شوێنی خۆی جێگیری دەکەین
+                    currentBlock.width = 220; 
                     
                     blocks.push(currentBlock);
                     score++;
@@ -195,11 +194,14 @@
                     addNewBlock();
                 }
             }
-        });
-
-        function restartGame() {
-            startGame();
         }
+
+        window.addEventListener("pointerdown", handleTouch, { passive: false });
+
+        document.getElementById("restart-btn").addEventListener("click", (e) => {
+            e.stopPropagation();
+            startGame();
+        });
 
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -210,7 +212,7 @@
                 block.draw();
             }
 
-            if (currentBlock && gameRunning) {
+            if (currentBlock) {
                 currentBlock.update();
                 currentBlock.draw();
             }
