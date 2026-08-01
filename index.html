@@ -1,266 +1,114 @@
 <!DOCTYPE html>
-<html lang="ckb" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>یاری تاوەری دار</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>David Morgan - Profile</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            background: #0f172a;
-            font-family: Tahoma, sans-serif;
-            overflow: hidden;
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+
+        body {
+            /* لێرەدا دەتوانیت لینکی باکگراوندی وێنەکەت بگۆڕیت */
+            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            color: #ffffff;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            height: 100vh;
-            color: white;
-            user-select: none;
-            -webkit-user-select: none;
+            align-items: center;
+            min-height: 100vh;
+            backdrop-filter: blur(5px);
         }
 
-        #score {
-            position: absolute;
-            top: 25px;
-            font-size: 42px;
-            font-weight: bold;
-            color: #fbbf24;
-            text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
-            z-index: 10;
-        }
-
-        canvas {
-            background: #1e293b;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
-            border-radius: 12px;
-            touch-action: none;
-        }
-
-        #game-over {
-            display: none;
-            position: absolute;
-            background: rgba(15, 23, 42, 0.95);
-            padding: 35px;
+        .card {
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 25px;
             border-radius: 20px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-            border: 2px solid #334155;
-            z-index: 20;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
-        #game-over h2 {
-            margin-top: 0;
-            color: #f87171;
-            font-size: 30px;
+        .avatar-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 15px auto;
         }
 
-        #game-over p {
-            font-size: 20px;
-            color: #e2e8f0;
+        .avatar-container img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
         }
 
-        #game-over button {
-            background: #22c55e;
-            border: none;
-            padding: 14px 28px;
-            color: white;
-            font-size: 18px;
+        .username {
+            font-size: 22px;
             font-weight: bold;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: 0.2s;
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+            margin-bottom: 5px;
+            letter-spacing: 1px;
         }
 
-        #game-over button:hover {
-            background: #16a34a;
+        .bio-info {
+            font-size: 13px;
+            color: #b3b3b3;
+            margin-bottom: 20px;
+        }
+
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-icons a {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .social-icons a:hover {
+            background: #fff;
+            color: #000;
         }
     </style>
 </head>
 <body>
 
-    <div id="score">0</div>
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div class="card">
+        <!-- وێنەی پرۆفایل -->
+        <div class="avatar-container">
+            <img src="https://i.imgur.com/7k12EPG.png" alt="Avatar">
+        </div>
 
-    <div id="game-over">
-        <h2>یاریەکە تەواو بوو!</h2>
-        <p id="final-score">نمرەکەت: 0</p>
-        <button id="restart-btn">دوبارە یاری کردن</button>
+        <!-- ناوی بەکارهێنەر -->
+        <div class="username">! David MorG4n</div>
+        <div class="bio-info">💼 Developer | 📍 Slemani</div>
+
+        <!-- سۆشیال میدیا و بەستەرەکان -->
+        <div class="social-icons">
+            <a href="https://discord.com" target="_blank">💬</a>
+            <a href="https://youtube.com" target="_blank">▶</a>
+            <a href="https://spotify.com" target="_blank">🎵</a>
+            <a href="https://tiktok.com" target="_blank">📱</a>
+        </div>
     </div>
-
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-
-        let score = 0;
-        let gameRunning = true;
-        let cameraY = 0;
-        let targetCameraY = 0;
-
-        // ڕەنگەکانی تایبەت بە داری سندوقی ناو وێنەکە (دارێکی کاڵی جوانی گەرم)
-        const woodBg = "#d4a373";
-        const woodInner = "#e9edc9";
-        const woodEdge = "#bc6c25";
-        const plankLine = "#dda15e";
-
-        class Block {
-            constructor(x, y, width, height, speed) {
-                this.x = x;
-                this.y = y;
-                this.width = width;
-                this.height = height;
-                this.speed = speed;
-                this.landed = false;
-            }
-
-            draw() {
-                let renderY = this.y - cameraY;
-
-                // چوارچێوەی دەرەوەی دارەکە
-                ctx.fillStyle = woodBg;
-                ctx.fillRect(this.x, renderY, this.width, this.height);
-
-                // ناوەوەی دارەکە
-                ctx.fillStyle = woodInner;
-                ctx.fillRect(this.x + 4, renderY + 4, this.width - 8, this.height - 8);
-
-                // هێڵە ستوونییەکانی دار (هاوشێوەی وێنەی سندوقەکە)
-                ctx.fillStyle = plankLine;
-                for (let px = this.x + 16; px < this.x + this.width - 12; px += 20) {
-                    ctx.fillRect(px, renderY + 5, 2, this.height - 10);
-                }
-
-                // قەراغی قایم و سەرنجڕاکێش
-                ctx.strokeStyle = woodEdge;
-                ctx.lineWidth = 2.5;
-                ctx.strokeRect(this.x, renderY, this.width, this.height);
-
-                // چوارچێوەی سەرەوە و خوارەوەی دارەکە (بەندی قەراغ)
-                ctx.fillStyle = woodEdge;
-                ctx.fillRect(this.x, renderY, this.width, 4);
-                ctx.fillRect(this.x, renderY + this.height - 4, this.width, 4);
-            }
-
-            update() {
-                if (!this.landed && gameRunning) {
-                    this.x += this.speed;
-                    if (this.x <= 0 || this.x + this.width >= canvas.width) {
-                        this.speed = -this.speed;
-                    }
-                }
-            }
-        }
-
-        let blocks = [];
-        let currentBlock = null;
-        
-        // قیاسی دارەکان (درێژ و ناسک هاوشێوەی ڤیدیۆ و وێنەکە)
-        const blockWidth = 260; 
-        const blockHeight = 35; 
-
-        function startGame() {
-            blocks = [];
-            score = 0;
-            cameraY = 0;
-            targetCameraY = 0;
-            gameRunning = true;
-            document.getElementById("score").innerText = score;
-            document.getElementById("game-over").style.display = "none";
-
-            // بنکەی سەرەکی
-            let baseBlock = new Block(canvas.width / 2 - blockWidth / 2, canvas.height - 70, blockWidth, blockHeight, 0);
-            baseBlock.landed = true;
-            blocks.push(baseBlock);
-
-            addNewBlock();
-        }
-
-        function addNewBlock() {
-            if (!gameRunning) return;
-            let lastBlock = blocks[blocks.length - 1];
-            let newY = lastBlock.y - (blockHeight - 3);
-            
-            // خێرایی کەمێک زیاد دەکات بە پێی بەرزبوونەوەی نمرە
-            let speed = 4 + Math.min(score * 0.12, 5.5); 
-            if (Math.random() > 0.5) speed = -speed;
-            
-            currentBlock = new Block(0, newY, blockWidth, blockHeight, speed);
-        }
-
-        function handleTouch(e) {
-            if (e) e.preventDefault();
-            if (!gameRunning) return;
-
-            if (currentBlock && !currentBlock.landed) {
-                currentBlock.landed = true;
-                
-                let lastBlock = blocks[blocks.length - 1];
-                
-                let overlapStart = Math.max(currentBlock.x, lastBlock.x);
-                let overlapEnd = Math.min(currentBlock.x + currentBlock.width, lastBlock.x + lastBlock.width);
-                let overlapWidth = overlapEnd - overlapStart;
-
-                // ئەگەر زۆر لایدا و کەوتە دەرەوە یاریەکە دەدۆڕێنێت
-                if (overlapWidth < currentBlock.width * 0.35) {
-                    gameRunning = false;
-                    document.getElementById("final-score").innerText = "نمرەکەت: " + score;
-                    document.getElementById("game-over").style.display = "block";
-                } else {
-                    currentBlock.width = blockWidth;
-                    
-                    // پشکنینی ڕێکی بۆ خاڵبەندی
-                    let diff = Math.abs(currentBlock.x - lastBlock.x);
-                    
-                    if (diff < 12) {
-                        score += 10; // زۆر ڕێک و پێک (١٠ خاڵ)
-                    } else {
-                        score += 5;  // دانانی ئاسایی (٥ خاڵ)
-                    }
-
-                    document.getElementById("score").innerText = score;
-
-                    blocks.push(currentBlock);
-
-                    // بەرزکردنەوەی کامێرا کاتێک تاوەرەکە بەرز دەبێتەوە
-                    if (blocks.length > 6) {
-                        targetCameraY += (blockHeight - 3);
-                    }
-
-                    addNewBlock();
-                }
-            }
-        }
-
-        window.addEventListener("pointerdown", handleTouch, { passive: false });
-
-        document.getElementById("restart-btn").addEventListener("click", (e) => {
-            e.stopPropagation();
-            startGame();
-        });
-
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            cameraY += (targetCameraY - cameraY) * 0.1;
-
-            for (let block of blocks) {
-                block.draw();
-            }
-
-            if (currentBlock) {
-                currentBlock.update();
-                currentBlock.draw();
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        startGame();
-        gameLoop();
-    </script>
 
 </body>
 </html>
